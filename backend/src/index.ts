@@ -100,6 +100,33 @@ app.get('/api/users', authenticate, async (req, res) => {
   res.json(users);
 });
 
+app.post('/api/users', authenticate, async (req, res) => {
+  const user = (req as any).user;
+  if (user.role !== 'Admin') return res.status(403).json({ error: 'Unauthorized' });
+  try {
+    const { name, email, password, role } = req.body;
+    if (!email || !password || !name) return res.status(400).json({ error: 'Missing required fields' });
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) return res.status(400).json({ error: 'User already exists' });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userRole = role === 'Admin' ? 'Admin' : 'Member';
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
+      [name, email, hashedPassword, userRole]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
+app.delete('/api/users/:id', authenticate, async (req, res) => {
+  const user = (req as any).user;
+  if (user.role !== 'Admin') return res.status(403).json({ error: 'Unauthorized' });
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
 // --- PROJECT ROUTES ---
 
 app.get('/api/projects', authenticate, async (req, res) => {
