@@ -59,6 +59,16 @@ export default function TasksPage() {
     setTasks(updatedTasks);
   };
 
+  const handleUpdateTaskPriority = async (taskId: string, priority: string) => {
+    await fetch(`/api/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority })
+    });
+    const updatedTasks = await fetch('/api/tasks').then(res => res.json());
+    setTasks(updatedTasks);
+  };
+
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('all');
@@ -156,6 +166,7 @@ export default function TasksPage() {
               <th>Project</th>
               <th>Assigned To</th>
               <th>Due Date</th>
+              <th>Priority</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -174,6 +185,19 @@ export default function TasksPage() {
                   <select
                     className="input-field"
                     style={{ padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)' }}
+                    value={task.priority || 'Medium'}
+                    onChange={(e) => handleUpdateTaskPriority(task.id, e.target.value)}
+                    disabled={user.role !== 'Admin'}
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </td>
+                <td>
+                  <select
+                    className="input-field"
+                    style={{ padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)' }}
                     value={task.status}
                     onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
                     disabled={user.role !== 'Admin' && task.assignedToId !== user.id}
@@ -187,7 +211,7 @@ export default function TasksPage() {
             ))}
             {filteredTasks.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem 1rem' }}>
+                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem 1rem' }}>
                   <CheckSquare size={28} style={{ opacity: 0.3, margin: '0 auto 0.5rem', display: 'block' }} />
                   <p style={{ fontSize: '0.875rem' }}>No tasks found matching your criteria.</p>
                 </td>

@@ -20,6 +20,7 @@ export default function ProjectDetailsPage() {
   const [description, setDescription] = useState('');
   const [assignedToId, setAssignedToId] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState('Medium');
 
   const fetchProject = async () => {
     const res = await fetch(`/api/projects/${id}`);
@@ -59,7 +60,8 @@ export default function ProjectDetailsPage() {
         description, 
         projectId: id, 
         assignedToId: assignedToId || undefined, 
-        dueDate: dueDate || undefined 
+        dueDate: dueDate || undefined,
+        priority
       })
     });
     
@@ -70,6 +72,7 @@ export default function ProjectDetailsPage() {
       setDescription('');
       setAssignedToId('');
       setDueDate('');
+      setPriority('Medium');
     }
   };
 
@@ -78,6 +81,15 @@ export default function ProjectDetailsPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
+    });
+    fetchProject();
+  };
+
+  const handleUpdateTaskPriority = async (taskId: string, priority: string) => {
+    await fetch(`/api/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority })
     });
     fetchProject();
   };
@@ -156,6 +168,7 @@ export default function ProjectDetailsPage() {
               <th>Task</th>
               <th>Assigned To</th>
               <th>Due Date</th>
+              <th>Priority</th>
               <th>Status</th>
               {user?.role === 'Admin' && <th style={{ width: '48px' }}></th>}
             </tr>
@@ -169,6 +182,19 @@ export default function ProjectDetailsPage() {
                 </td>
                 <td>{task.assignedTo?.name || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                 <td>{task.dueDate ? format(new Date(task.dueDate), 'MMM d, yyyy') : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                <td>
+                  <select 
+                    className="input-field" 
+                    style={{ padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-input)' }}
+                    value={task.priority || 'Medium'}
+                    onChange={(e) => handleUpdateTaskPriority(task.id, e.target.value)}
+                    disabled={user.role !== 'Admin'}
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </td>
                 <td>
                   <select 
                     className="input-field" 
@@ -247,6 +273,14 @@ export default function ProjectDetailsPage() {
                   value={dueDate}
                   onChange={e => setDueDate(e.target.value)}
                 />
+              </div>
+              <div className="form-group">
+                <label className="label">Priority</label>
+                <select className="input-field" value={priority} onChange={e => setPriority(e.target.value)}>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
               </div>
               <div style={{ display: 'flex', gap: '0.625rem', marginTop: '1.25rem' }}>
                 <button type="button" onClick={() => setShowTaskModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>

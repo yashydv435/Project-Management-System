@@ -40,6 +40,14 @@ export default function Dashboard() {
     { label: 'Completed', count: doneCount, icon: CheckCircle2, color: 'var(--success)', bg: 'var(--success-dim)' },
   ];
 
+  const tasksByUser = Object.values(tasks.reduce((acc: any, task: any) => {
+    const userName = task.assignedTo?.name || 'Unassigned';
+    if (!acc[userName]) acc[userName] = { name: userName, count: 0, done: 0 };
+    acc[userName].count++;
+    if (task.status === 'Done') acc[userName].done++;
+    return acc;
+  }, {})).sort((a: any, b: any) => b.count - a.count);
+
   return (
     <div className="animate-fade-in">
       <div className="page-header">
@@ -100,6 +108,7 @@ export default function Dashboard() {
                   <th>Task</th>
                   <th>Project</th>
                   <th>Due Date</th>
+                  <th>Priority</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -109,6 +118,14 @@ export default function Dashboard() {
                     <td style={{ fontWeight: 500, color: 'var(--text)' }}>{task.title}</td>
                     <td>{task.project.name}</td>
                     <td style={{ color: 'var(--danger)' }}>{format(new Date(task.dueDate), 'MMM d, yyyy')}</td>
+                    <td>
+                      <span className={`badge`} style={{ 
+                        background: task.priority === 'High' ? 'var(--danger-dim)' : 'var(--bg-hover)', 
+                        color: task.priority === 'High' ? 'var(--danger)' : 'var(--text-muted)' 
+                      }}>
+                        {task.priority || 'Medium'}
+                      </span>
+                    </td>
                     <td>
                       <span className={`badge badge-${task.status.toLowerCase()}`}>
                         {task.status === 'InProgress' ? 'In Progress' : task.status}
@@ -140,6 +157,7 @@ export default function Dashboard() {
                 <th>Project</th>
                 <th>Assigned To</th>
                 <th>Due Date</th>
+                <th>Priority</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -151,6 +169,14 @@ export default function Dashboard() {
                   <td>{task.assignedTo?.name || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                   <td>{task.dueDate ? format(new Date(task.dueDate), 'MMM d, yyyy') : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                   <td>
+                    <span className={`badge`} style={{ 
+                      background: task.priority === 'High' ? 'var(--danger-dim)' : 'var(--bg-hover)', 
+                      color: task.priority === 'High' ? 'var(--danger)' : 'var(--text-muted)' 
+                    }}>
+                      {task.priority || 'Medium'}
+                    </span>
+                  </td>
+                  <td>
                     <span className={`badge badge-${task.status.toLowerCase()}`}>
                       {task.status === 'InProgress' ? 'In Progress' : task.status}
                     </span>
@@ -159,7 +185,7 @@ export default function Dashboard() {
               ))}
               {tasks.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2.5rem 1rem' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2.5rem 1rem' }}>
                     No tasks yet. Create a project and add tasks to get started.
                   </td>
                 </tr>
@@ -168,6 +194,44 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      {/* Tasks Per User */}
+      {tasksByUser.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <h2 style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.75rem' }}>Tasks per User</h2>
+          <div className="glass-panel" style={{ overflow: 'hidden' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Team Member</th>
+                  <th>Total Assigned Tasks</th>
+                  <th>Completed</th>
+                  <th>Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(tasksByUser as any[]).map((u, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 500, color: 'var(--text)' }}>{u.name}</td>
+                    <td>{u.count}</td>
+                    <td>{u.done}</td>
+                    <td style={{ width: '40%' }}>
+                      <div style={{ height: '6px', background: 'var(--bg-hover)', borderRadius: '3px', overflow: 'hidden', width: '100%' }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${(u.done / u.count) * 100}%`,
+                          background: 'var(--accent)',
+                          borderRadius: '3px'
+                        }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

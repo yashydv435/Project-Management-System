@@ -152,7 +152,7 @@ app.get('/api/projects/:id', authenticate, async (req, res) => {
 
   const tasksRes = await pool.query(`
     SELECT
-      t.id, t.title, t.description, t.status, t.project_id,
+      t.id, t.title, t.description, t.status, t.project_id, t.priority,
       t.assigned_to_id, t.due_date, t.created_at, t.updated_at,
       u.id AS assignee_id, u.name AS assignee_name, u.email AS assignee_email
     FROM tasks t
@@ -166,7 +166,7 @@ app.get('/api/projects/:id', authenticate, async (req, res) => {
     ownerId: p.owner_id, createdAt: p.created_at, updatedAt: p.updated_at,
     owner: { id: p.u_id, name: p.u_name, email: p.u_email },
     tasks: tasksRes.rows.map(t => ({
-      id: t.id, title: t.title, description: t.description, status: t.status,
+      id: t.id, title: t.title, description: t.description, status: t.status, priority: t.priority,
       projectId: t.project_id, assignedToId: t.assigned_to_id,
       dueDate: t.due_date, createdAt: t.created_at, updatedAt: t.updated_at,
       assignedTo: t.assignee_id ? { id: t.assignee_id, name: t.assignee_name, email: t.assignee_email } : null
@@ -193,7 +193,7 @@ app.get('/api/tasks', authenticate, async (req, res) => {
 
   const result = await pool.query(`
     SELECT
-      t.id, t.title, t.description, t.status, t.project_id,
+      t.id, t.title, t.description, t.status, t.project_id, t.priority,
       t.assigned_to_id, t.due_date, t.created_at, t.updated_at,
       p.id AS p_id, p.name AS p_name,
       u.id AS u_id, u.name AS u_name
@@ -205,7 +205,7 @@ app.get('/api/tasks', authenticate, async (req, res) => {
   `, params);
 
   const tasks = result.rows.map(t => ({
-    id: t.id, title: t.title, description: t.description, status: t.status,
+    id: t.id, title: t.title, description: t.description, status: t.status, priority: t.priority,
     projectId: t.project_id, assignedToId: t.assigned_to_id,
     dueDate: t.due_date, createdAt: t.created_at, updatedAt: t.updated_at,
     project: { id: t.p_id, name: t.p_name },
@@ -218,23 +218,23 @@ app.post('/api/tasks', authenticate, async (req, res) => {
   const user = (req as any).user;
   if (user.role !== 'Admin') return res.status(403).json({ error: 'Only admins can create tasks' });
   try {
-    const { title, description, projectId, assignedToId, dueDate } = req.body;
+    const { title, description, projectId, assignedToId, dueDate, priority } = req.body;
     if (!title || !projectId) return res.status(400).json({ error: 'Title and projectId are required' });
 
     if (assignedToId === 'all') {
       const allUsers = await pool.query('SELECT id FROM users');
       const tasks = await Promise.all(allUsers.rows.map(u =>
         pool.query(
-          'INSERT INTO tasks (title, description, project_id, assigned_to_id, due_date) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-          [title, description || null, projectId, u.id, dueDate ? new Date(dueDate) : null]
+          'INSERT INTO tasks (title, description, project_id, assigned_to_id, due_date, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+          [title, description || null, projectId, u.id, dueDate ? new Date(dueDate) : null, priority || 'Medium']
         ).then(r => r.rows[0])
       ));
       return res.status(201).json(tasks);
     }
 
     const result = await pool.query(
-      'INSERT INTO tasks (title, description, project_id, assigned_to_id, due_date) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, description || null, projectId, assignedToId || null, dueDate ? new Date(dueDate) : null]
+      'INSERT INTO tasks (title, description, project_id, assigned_to_id, due_date, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [title, description || null, projectId, assignedToId || null, dueDate ? new Date(dueDate) : null, priority || 'Medium']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -250,7 +250,7 @@ app.patch('/api/tasks/:id', authenticate, async (req, res) => {
     if (user.role !== 'Admin' && task.assigned_to_id !== user.id)
       return res.status(403).json({ error: 'Unauthorized' });
 
-    const { status, title, description, assignedToId, dueDate } = req.body;
+    const { status, title, description, assignedToId, dueDate, priority } = req.body;
     const fields: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -261,6 +261,7 @@ app.patch('/api/tasks/:id', authenticate, async (req, res) => {
       if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description); }
       if (assignedToId !== undefined) { fields.push(`assigned_to_id = $${idx++}`); values.push(assignedToId); }
       if (dueDate !== undefined && dueDate !== null) { fields.push(`due_date = $${idx++}`); values.push(new Date(dueDate)); }
+      if (priority !== undefined) { fields.push(`priority = $${idx++}`); values.push(priority); }
     }
 
     if (fields.length === 0) return res.json(task);

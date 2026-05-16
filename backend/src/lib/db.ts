@@ -34,9 +34,17 @@ export async function initDB() {
       project_id      UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       assigned_to_id  UUID REFERENCES users(id) ON DELETE SET NULL,
       due_date        TIMESTAMPTZ,
+      priority        TEXT NOT NULL DEFAULT 'Medium',
       created_at      TIMESTAMPTZ DEFAULT NOW(),
       updated_at      TIMESTAMPTZ DEFAULT NOW()
     );
+
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='priority') THEN
+        ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'Medium';
+      END IF;
+    END $$;
   `);
   console.log('Database tables ready.');
 }
