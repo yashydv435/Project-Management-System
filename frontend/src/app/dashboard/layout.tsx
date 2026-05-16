@@ -22,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setLoading(false);
       })
       .catch(() => {
+        setLoading(false);
         router.push('/');
       });
   }, [router]);

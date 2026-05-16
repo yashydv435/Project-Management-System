@@ -7,9 +7,12 @@ import { prisma } from './lib/prisma';
 import { signToken, verifyToken } from './lib/auth';
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Health Check
+app.get('/', (req, res) => res.send('Backend is running'));
 
 // Auth Middleware
 const authenticate = (req: Request, res: Response, next: NextFunction) => {
@@ -179,7 +182,7 @@ app.patch('/api/tasks/:id', authenticate, async (req, res) => {
       if (title !== undefined) updatedData.title = title;
       if (description !== undefined) updatedData.description = description;
       if (assignedToId !== undefined) updatedData.assignedToId = assignedToId;
-      if (dueDate !== undefined) updatedData.dueDate = new Date(dueDate);
+      if (dueDate !== undefined && dueDate !== null) updatedData.dueDate = new Date(dueDate);
     }
     
     const updatedTask = await prisma.task.update({ where: { id: req.params.id as string }, data: updatedData });

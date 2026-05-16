@@ -241,7 +241,7 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .auth-wrapper { opacity: 0; transition: opacity 0.5s ease; }
         .auth-wrapper.loaded { opacity: 1; }
       `}</style>

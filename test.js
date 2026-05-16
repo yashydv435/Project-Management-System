@@ -49,7 +49,7 @@ async function testApi() {
     console.log('--- STARTING TESTS ---');
 
     // 1. Register Admin
-    console.log('\\n1. Registering Admin User...');
+    console.log('\n1. Registering Admin User...');
     const adminRes = await request('/auth/register', 'POST', {
       name: 'Admin User',
       email: `admin_${Date.now()}@test.com`,
@@ -67,7 +67,7 @@ async function testApi() {
     }
 
     // 2. Register Member
-    console.log('\\n2. Registering Member User...');
+    console.log('\n2. Registering Member User...');
     const memberRes = await request('/auth/register', 'POST', {
       name: 'Member User',
       email: `member_${Date.now()}@test.com`,
@@ -85,7 +85,7 @@ async function testApi() {
     }
 
     // 3. Admin creates Project
-    console.log('\\n3. Admin creating a Project...');
+    console.log('\n3. Admin creating a Project...');
     const projectRes = await request('/projects', 'POST', {
       name: 'Test Project',
       description: 'A project for automated testing'
@@ -99,7 +99,7 @@ async function testApi() {
     }
 
     // 4. Admin creates Task and assigns to Member
-    console.log('\\n4. Admin creating a Task...');
+    console.log('\n4. Admin creating a Task...');
     const taskRes = await request('/tasks', 'POST', {
       title: 'Automated Test Task',
       projectId: projectId,
@@ -114,7 +114,7 @@ async function testApi() {
     }
 
     // 5. Member fetches Tasks
-    console.log('\\n5. Member fetching tasks...');
+    console.log('\n5. Member fetching tasks...');
     const getTasksRes = await request('/tasks', 'GET', null, memberCookie);
     console.log('Status:', getTasksRes.status);
     if (getTasksRes.status === 200 && getTasksRes.data.length > 0) {
@@ -124,7 +124,7 @@ async function testApi() {
     }
 
     // 6. Member updates Task Status
-    console.log('\\n6. Member updating Task status...');
+    console.log('\n6. Member updating Task status...');
     const updateTaskRes = await request(`/tasks/${taskId}`, 'PATCH', {
       status: 'InProgress'
     }, memberCookie);
@@ -135,7 +135,7 @@ async function testApi() {
       console.error('❌ Member task update failed:', updateTaskRes.data);
     }
 
-    console.log('\\n--- TESTS COMPLETED SUCCESSFULLY ---');
+    console.log('\n--- TESTS COMPLETED SUCCESSFULLY ---');
   } catch (err) {
     console.error('Test script crashed:', err);
   }
